@@ -1,42 +1,28 @@
-TASK DATE: 12.04.2018 - FINISHED: 
+FOR PRIVACY AND CODE PROTECTING REASONS THIS IS A SIMPLIFIED VERSION OF CHANGES AND NEW FEATURES
+
+TASK DATE: 12.04.2018 - FINISHED: 16.04.2018
 
 TASK LEVEL: MEDIUM (light)
 
-TASK SHORT DESCRIPTION: 1289 [
-								"Be able to make user group questions mandatory or not.
-								'Required' tickbox option in custom field edit pop up. Default = 0. If ticked (1), 
-								make question required on registration form."
-							]
+TASK SHORT DESCRIPTION: ["Be able to make user group questions mandatory or not.
+	'Required' tickbox option in custom field edit pop up. Default = 0. If ticked (1), 
+	make question required on registration form."]
 
-NOTES: 
-
-	- questions from default_questions table
-			* default questions are: where slug does not contain custom-question-<number>
-			* custom questions are: where slug contains custom-question-<number>
-			* WHEN creating upgrade to the DB - remover questions which slugs contain free-text-<number> 
-												if there's no data in default_profile_question_answers and default_profile_question_answers_offline tables (for example all free_text_1 value in every row is NULL or empty)
-	- On the left hand side just default questions
-	- On the right hand side the others (custom fields)
-	- When DB upgraded all of the mandatory fields (as default) must be 0 expect years from - to 
-	
 GITHUB REPOSITORY CODE: feature/task-1289-group-questions-mandatory
-
-
-ORIGINAL WORK: https://github.com/BusinessBecause/network-site/tree/feature/task-1289-group-questions-mandatory
-
+	
 CHANGES
  
 	NEW FILES 
 	
-		\network-site\addons\default\modules\network_settings\views\members\partials\group_questions_table.php
-		\network-site\addons\default\modules\network_settings\views\members\partials\group_questions_table_header.php
-		\network-site\addons\default\modules\network_settings\views\members\partials\group_questions_table_row.php
-		\network-site\addons\default\modules\network_settings\views\members\partials\group_questions_table_row_add_field.php
-		\network-site\addons\default\modules\network_settings\language\english\user_groups_lang.php
+		group_questions_table.php
+		group_questions_table_header.php
+		group_questions_table_row.php
+		group_questions_table_row_add_field.php
+		user_groups_lang.php
  
 	IN FILES: 
 		
-		\network-site\addons\default\modules\network_settings\controllers\members.php
+		members.php
 		
 			TOTALLY changed group_questions function
 			
@@ -57,54 +43,12 @@ CHANGES
 					$this->load->model('network_settings_m');
 					$this->lang->load('user_groups');
 					
-					//init some vars
-					$personTypeId = (int) xss_clean($this->input->post('group_id'));
-					$institutionName = Settings::get('institution_name');
-					
-					//Build default questions table
-					$defaultQuestions = $this->profile_questions_m->get_group_questions($personTypeId, 'default');
-					#build head of the table
-					$tableHead = $this->load->view('members/partials/group_questions_table_header', array('custom' => ''), true);
-					#build body of the table
-					$tableBody = $this->_getTableBody($defaultQuestions, $personTypeId, $institutionName, 'default');
-					#put together the full table
-					$data['defaultQuestionsTable'] = $this->load->view('members/partials/group_questions_table', array('questionType' => 'default', 'personTypeId' => $personTypeId, 'tableHead' => $tableHead, 'tableBody' => $tableBody), true);	
-					
-					//Build custom questions table
-					$customQuestions = $this->profile_questions_m->get_group_questions($personTypeId, 'custom');
-					#build head of the table
-					$tableHead = $this->load->view('members/partials/group_questions_table_header', array('custom' => 'custom_'), true);
-					#build body of the table
-					$tableBody = '';
-					$tableBody = $this->load->view('members/partials/group_questions_table_row_add_field', array('personTypeId' => $personTypeId), true);
-					$tableBody .= $this->_getTableBody($customQuestions, $personTypeId, $institutionName, 'custom');
-					#put together the full table
-					$data['customQuestionsTable'] = $this->load->view('members/partials/group_questions_table', array('questionType' => 'custom', 'personTypeId' => $personTypeId, 'tableHead' => $tableHead, 'tableBody' => $tableBody), true);			
+					....................		
 
-					//get group id and colour
-					$data['personTypeId'] = $personTypeId;
-					$data['group_colour'] = '';
-
-					$entry=$this->streams->entries->get_entry($personTypeId, 'person_type', 'streams', false);
-
-					if($entry) {
-						if($entry->colour_code=='' or $entry->colour_code==null) {
-							$data['group_colour'] = '#3366FF';
-						} else {
-							$data['group_colour']=$entry->colour_code;
-						}
-
-						$data['offline_group'] = $entry->offline_group;
-						$data['show_class_of'] = $entry->show_class_of;
-						$data['show_calc_class_of'] = $entry->show_calc_class_of;
-						$data['person_type'] = $entry;
-					}
-
-					$data['messages_lock'] = (int) $this->network_settings_m->getMessagesLock($personTypeId);
 					//send response
 					$response = array(
 						'status' => 'ok',
-						'html' => $this->load->view('members/partials/group_questions', $data, true),
+						'html' => $this->load->view('...........group_questions', $data, true),
 					);
 
 					$this->template->build_json($response);
@@ -119,42 +63,20 @@ CHANGES
 					$output = "";
 					foreach ($records as $question) 
 					{
-						$questionText = $question->question;
-						$questionText = str_replace('the school', $institutionName, $questionText); //replace any like Surname when at the school with Surname when at abc college
-						if ( strpos($question->type_slug, 'free-text') !== FALSE AND $question->options !== null) {
-							$options = unserialize($question->options);
-							if ( is_array($options) AND array_key_exists('question_text', $options) ) {
-								$questionText = $options['question_text'];
-							}
-						}
-						if (trim($questionText) != '') {
-							$question->requiredText = ($question->is_required) ? '*' : '';
-							$question->enabledChecked = ($question->enabled) ? ' checked="checked"' : '';
-							$question->askOnRegistrationChecked = ($question->ask_on_registration) ? ' checked="checked"' : '';
-							$question->offlineUseChecked = ($question->offline_use) ? ' checked="checked"' : '';
-							$question->questionText = $questionText;
-							$output .= $this->load->view('members/partials/group_questions_table_row', array('question' => $question, 'questionType' => $questionType, 'personTypeId' => $personTypeId), true);			
-						}
+						...........
 					}
 					return $output;
 				}//END inside function _getTableBody	
 				
 			
-				/* Set question's mandatory value in group_questions table
-				 * @input (getting from POST variable)
-				 *		- $value : boolean : 0 or 1
-				 *		- $questionId : int 
-				 *		- $personTypeId : int
-				*/
+
 				public function ajaxUpdateQuestionMandatory() 
 				{
 					if( ! $this->input->is_ajax_request())  {
 						show_404(); exit;
 					}
 
-					$value = $this->input->post('value');
-					$questionId = $this->input->post('questionId');
-					$personTypeId = $this->input->post('personTypeId');
+					....................
 					
 					$result = false;
 					if ($questionId > 0 and $personTypeId > 0) {
@@ -169,13 +91,6 @@ CHANGES
 				
 				
 				
-				/* Getting a table-row for the group questions table 
-				 * @input (getting from POST variable)
-				 *		- $questionId : int 
-				 *		- $personTypeId : int
-				 * @return
-				 *		- string : a HTML snippet
-				*/
 				public function ajaxGetGroupQuestion() 
 				{
 					//checking was an AJAX call
@@ -183,14 +98,8 @@ CHANGES
 						show_404(); exit;
 					}
 					
-					//set some vars
-					$questionId = $this->input->post('questionId');
-					$personTypeId = (int) xss_clean($this->input->post('personTypeId'));
-					$institutionName = Settings::get('institution_name');
+					.............
 					
-					//getting question's details by id
-					$question = $this->profile_questions_m->get_group_questions($personTypeId, '', $questionId);
-
 					//send back the table-row
 					echo $this->_getTableBody($question, $personTypeId, $institutionName, 'custom');
 					
@@ -198,7 +107,7 @@ CHANGES
 			
 		
 		
-		\network-site\addons\default\modules\network_settings\views\members\user_groups.php
+		user_groups.php
 		
 			ADDED Modals
 			
@@ -211,7 +120,7 @@ CHANGES
 
 			
 		
-		\network-site\addons\default\modules\network_settings\views\members\partials\custom_questions_dialog.php
+		custom_questions_dialog.php
 		
 			ADDED mandatory section
 			
@@ -232,7 +141,7 @@ CHANGES
 				<? endif; ?>	
 		
 		
-		\network-site\addons\default\modules\network_settings\css\user_groups.css
+		user_groups.css
 		
 			ADDED CODE:
 			
@@ -304,7 +213,7 @@ CHANGES
 		
 		
 		
-		\network-site\addons\default\modules\network_settings\js\user_groups.js
+		user_groups.js
 		
 			ADDED NEW Controll parts
 			
@@ -321,10 +230,8 @@ CHANGES
 					var personTypeId = $this.data("person-type-id");
 
 					//passing data to the controller, set changes in DB
-					AJAX.call('admin-portal/members/ajaxUpdateQuestionMandatory', {'value' : value, 'questionId' : questionId, 'personTypeId' : personTypeId}, function(response) {
-						//Set mandatory status to display next to the question
-						var elem = $('#mandatory_' + personTypeId + '_' + questionId);	
-						elem.html( (elem.html() == '*') ? '' : '*' );
+					AJAX.call('..........ajaxUpdateQuestionMandatory', {'value' : value, 'questionId' : questionId, 'personTypeId' : personTypeId}, function(response) {
+						...........
 					})
 				});
 		
@@ -346,7 +253,7 @@ CHANGES
 					$('#custom-add-question-modal')
 						.removeData('bs.modal')
 						.modal({
-							remote: BASE_URI + 'admin-portal/members/custom_questions_dialog/0/' + personTypeId,
+							remote: '..........custom_questions_dialog/0/' + personTypeId,
 						})
 				});
 
@@ -369,12 +276,12 @@ CHANGES
 					COMMON.disableButton(btnAddSelector);
 					
 					//action - 1. AJAX call: saving new question into DB - 2. AJAX call: getting new HTML snippet for the new question
-					AJAX.call('admin-portal/members/save_custom_question/', $('#custom-questions-options form').serialize(), function(response){
+					AJAX.call('............save_custom_question/', $('#custom-questions-options form').serialize(), function(response){
 						var result = $.parseJSON(response);
 						if( result.status == 'success' ) {
 							var personTypeId = $('#add_question_person_type_id').val(); 
 							if (personTypeId > 0) {
-								AJAX.call('admin-portal/members/ajaxGetGroupQuestion', {'questionId' : result.question_id, 'personTypeId' : personTypeId}, function(tableRow) {	
+								AJAX.call('............ajaxGetGroupQuestion', {'questionId' : result.question_id, 'personTypeId' : personTypeId}, function(tableRow) {	
 									$('#group_questions2_body_custom_' + personTypeId).append( tableRow );
 									COMMON.enableButton(btnSaveSelector, 'btn-primary');
 									COMMON.enableButton(btnCancelSelector, 'btn-primary');
@@ -414,16 +321,9 @@ CHANGES
 						text: "Are you sure you want to delete this question?",
 						confirm: function() {
 							if (questionId > 0 && personTypeId > 0) {
-								AJAX.call('admin-portal/members/delete_custom_question/' + questionId, {}, function(response) {
+								AJAX.call('..........delete_custom_question/' + questionId, {}, function(response) {
 									var result = $.parseJSON(response);
-									if ( result.status == 'ok' ) {
-										$('#question_row_custom_' + personTypeId + '_' + questionId).remove();
-										$('#question-options-modal').modal('hide');
-									} 
-									else {
-										COMMON.enableButton(btnSaveSelector, 'btn-primary');
-										COMMON.enableButton(btnDeleteSelector, 'btn-primary');
-									}
+									..................
 								});
 							}
 						},
@@ -437,7 +337,7 @@ CHANGES
 		
 		
 		
-		\network-site\addons\default\modules\bbusers\models\profile_questions_m.php
+		profile_questions_m.php
 		
 			Inside functions: 
 				- get_registration_questions
@@ -445,11 +345,6 @@ CHANGES
 				- get_group_question
 				
 					ADD new fields for the queries: g.is_required,
-					
-					
-					
-		
-		\network-site\addons\default\modules\bbusers\views\partials\questions\
 			
 			EVERY FILE INSIDE THIS FOLDER WAS UPDATED ...
 			
@@ -464,7 +359,7 @@ CHANGES
 			
 			
 			
-		\network-site\addons\default\modules\clubs\details.php
+		details.php
 		
 			Inside upgrade function 
 			
@@ -485,17 +380,7 @@ CHANGES
 				private function _udpdateGroupQuestionsTable() 
 				{
 					#first we catch the id of question whose type_slug is years-from-to
-					$questionId = $this->db->select('id')
-											->from($this->db->dbprefix('questions'))
-											->where('type_slug', 'years-from-to')
-											->get()->row()->id;
-
-					if ( is_numeric($questionId) and $questionId > 0 ) {		
-						#update is_required field where question_id = $questionId
-						$this->db->set('is_required', '1')
-									->where('question_id', $questionId)
-									->update($this->db->dbprefix('group_questions'));
-					}
+					.............
 				}//END function _udpdateGroupQuestionsTable
 				
 				
@@ -509,20 +394,7 @@ CHANGES
 					foreach($deletableFields as $key => $field) 
 					{
 						#first we check belongs data to the field or doesn't 
-						$hits = $this->db->select('id')
-											->from($this->db->dbprefix('profile_question_answers'))
-											->where($field . ' IS NOT NULL', null, false)
-											->where($field . ' <> ""', null, false)
-											->where('COALESCE(' . $field . ', "") <> ""', null, false)
-											->get()->num_rows();
-											
-						$hitsOffline = $this->db->select('id')
-											->from($this->db->dbprefix('profile_question_answers_offline'))
-											->where($field . ' IS NOT NULL', null, false)
-											->where($field . ' <> ""', null, false)
-											->where('COALESCE(' . $field . ', "") <> ""', null, false)
-											->get()->num_rows();
-
+						...................
 						
 						#delete field if there's no data which belong to the field
 						if ($hitsOffline == 0 and $hits == 0) {
